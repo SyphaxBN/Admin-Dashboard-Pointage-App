@@ -82,7 +82,7 @@ export default function UsersPage() {
             <CardTitle className="text-center">Avril 2025</CardTitle>
           </CardHeader>
           <CardContent>
-            <Calendar mode="single" selected={new Date(2019, 4, 2)} className="rounded-md" />
+            <Calendar mode="single" selected={new Date(2025, 4, 3)} className="rounded-md" />
           </CardContent>
         </Card>
       </div>

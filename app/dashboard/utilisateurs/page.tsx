@@ -1,20 +1,57 @@
 "use client"
 
-import { useState } from "react"
-import { Search } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, Loader2 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { UserTable } from "@/components/user-table"
-import { users } from "@/data/users"
+import { api } from "@/lib/api"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [users, setUsers] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true)
+        const data = await api.users.getAll()
+        
+        if (Array.isArray(data)) {
+          setUsers(data)
+        } else {
+          console.error("Format de réponse inattendu:", data)
+          setUsers([])
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger les données utilisateurs",
+            variant: "destructive",
+          })
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des utilisateurs:", error)
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les utilisateurs",
+          variant: "destructive",
+        })
+        setUsers([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [toast])
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   return (
@@ -23,13 +60,21 @@ export default function UsersPage() {
         <div className="mb-6 relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name or email"
+            placeholder="Rechercher par nom ou email"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-10"
           />
         </div>
-        <UserTable users={filteredUsers} />
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Chargement des utilisateurs...</span>
+          </div>
+        ) : (
+          <UserTable users={filteredUsers} />
+        )}
       </div>
       <div>
         <Card>

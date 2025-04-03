@@ -1,12 +1,9 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { CheckInHistory } from "@/components/check-in-history"
 import { useToast } from "@/components/ui/use-toast"
-import { api } from "@/lib/api"
 
 // Composant qui utilise useSearchParams à l'intérieur d'une limite de suspense
 function CheckInHistoryContent() {

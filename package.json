@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "push": "git add . && git commit -m \"$npm_config_message\" && git push"
   },
   "dependencies": {
     "@dnd-kit/core": "latest",

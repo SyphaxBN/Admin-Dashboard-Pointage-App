@@ -17,19 +17,19 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
     <DayPicker
       locale={fr}
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 mx-auto", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 justify-center",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
+        caption: "flex justify-center pt-1 relative items-center px-10", // Ajout de padding horizontal
+        caption_label: "text-sm font-medium text-center absolute inset-0 flex items-center justify-center pointer-events-none", // Centré absolument
+        nav: "flex items-center justify-between w-full relative z-10", // Ajout de z-index
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 relative z-10",
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
+        nav_button_previous: "ml-1",
+        nav_button_next: "mr-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",

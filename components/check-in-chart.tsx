@@ -17,6 +17,7 @@ import {
 import { api } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTheme } from "next-themes"
+import { usePathname } from "next/navigation"
 
 // Interface pour les données quotidiennes
 interface DayData {
@@ -52,10 +53,16 @@ export function CheckInChart() {
   const { toast } = useToast()
   const { theme } = useTheme()
   const isDarkTheme = theme === "dark"
+  const pathname = usePathname()
+
+  // Only load data and render chart on dashboard homepage
+  const isDashboardHomePage = pathname === "/dashboard"
 
   useEffect(() => {
-    fetchWeeklyStats()
-  }, [])
+    if (isDashboardHomePage) {
+      fetchWeeklyStats()
+    }
+  }, [isDashboardHomePage])
 
   const fetchWeeklyStats = async () => {
     setIsLoading(true)
@@ -74,6 +81,11 @@ export function CheckInChart() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // If not on dashboard homepage, don't render anything
+  if (!isDashboardHomePage) {
+    return null
   }
 
   // Transformer les données pour Recharts avec les jours de la semaine

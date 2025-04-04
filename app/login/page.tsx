@@ -58,12 +58,30 @@ export default function LoginPage() {
 
         // Vérifier si la réponse contient une erreur
         if (response.error === true) {
-          // Utiliser le message d'erreur du backend
-          setErrorMessage(response.message || "Erreur d'authentification")
+          // Déterminer le type d'erreur en fonction du message ou du code
+          let errorTitle = "Accès refusé"
+          let errorDescription = response.message || "Erreur d'authentification"
+          
+          // Analyser le message d'erreur pour détecter des cas spécifiques
+          const errorMessage = response.message?.toLowerCase() || ""
+          
+          if (errorMessage.includes("email") && (errorMessage.includes("inexistant") || errorMessage.includes("not found") || errorMessage.includes("introuvable"))) {
+            errorTitle = "Email introuvable"
+            errorDescription = "Cet email n'existe pas dans notre base de données."
+          } else if (errorMessage.includes("password") || errorMessage.includes("mot de passe")) {
+            errorTitle = "Mot de passe incorrect"
+            errorDescription = "Le mot de passe que vous avez saisi est incorrect."
+          } else if (errorMessage.includes("role") || errorMessage.includes("permission") || errorMessage.includes("autoris")) {
+            errorTitle = "Accès non autorisé"
+            errorDescription = "Vous n'avez pas les droits d'administrateur nécessaires."
+          }
+          
+          // Définir le message d'erreur à afficher
+          setErrorMessage(errorDescription)
 
           toast({
-            title: "Accès refusé",
-            description: response.message || "Erreur d'authentification",
+            title: errorTitle,
+            description: errorDescription,
             variant: "destructive",
           })
 
@@ -103,7 +121,30 @@ export default function LoginPage() {
 
         // Si l'erreur a un message spécifique du backend
         if (apiError instanceof Error && apiError.message) {
-          setErrorMessage(apiError.message)
+          const errorMsg = apiError.message.toLowerCase()
+          
+          if (errorMsg.includes("email") && (errorMsg.includes("not found") || errorMsg.includes("inexistant") || errorMsg.includes("introuvable"))) {
+            setErrorMessage("Cet email n'existe pas dans notre base de données.")
+            toast({
+              title: "Email introuvable",
+              description: "Cet email n'existe pas dans notre base de données.",
+              variant: "destructive",
+            })
+          } else if (errorMsg.includes("password") || errorMsg.includes("mot de passe")) {
+            setErrorMessage("Le mot de passe que vous avez saisi est incorrect.")
+            toast({
+              title: "Mot de passe incorrect",
+              description: "Le mot de passe que vous avez saisi est incorrect.",
+              variant: "destructive",
+            })
+          } else {
+            setErrorMessage(apiError.message)
+            toast({
+              title: "Erreur de connexion",
+              description: apiError.message,
+              variant: "destructive",
+            })
+          }
         } else {
           setErrorMessage("Erreur lors de la connexion au serveur")
         }
@@ -155,7 +196,7 @@ export default function LoginPage() {
       <div className="w-full max-w-6xl bg-white dark:bg-gray-900 rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl">
         {/* Left side with logo */}
         <div className="md:w-1/2 bg-white dark:bg-gray-900 p-8 flex items-center justify-center">
-          <div className="w-40 h-40 md:w-64 md:h-64">
+          <div className="w-40 h-40 md:w-64 md:h-64 rounded-xl overflow-hidden">
             <Image
               src="https://st2.depositphotos.com/47577860/46107/v/450/depositphotos_461072634-stock-illustration-smartphone-delivery-phone-icon.jpg"
               alt="Logo"
@@ -169,7 +210,7 @@ export default function LoginPage() {
         {/* Right side with login form */}
         <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative">
           <div className="max-w-md mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">Bienvenue de retour !</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">Bon retour !</h1>
             <p className="text-gray-600 dark:text-gray-400 mb-8">
               Connectez-vous pour accéder au tableau de bord et gérer les utilisateurs, les pointages et les paramètres
               du système.
@@ -206,10 +247,10 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div className="flex justify-between items-center pt-4">
+              <div className="flex items-center pt-4">
                 <Button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 h-12 rounded-lg flex items-center gap-2"
+                  className="ml-[150px] bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 h-12 rounded-lg flex items-center gap-2"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -221,13 +262,6 @@ export default function LoginPage() {
                     "Se connecter"
                   )}
                 </Button>
-
-                <Link
-                  href="/forgot-password"
-                  className="text-blue-500 text-sm hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  Mot de passe oublié ?
-                </Link>
               </div>
             </form>
           </div>

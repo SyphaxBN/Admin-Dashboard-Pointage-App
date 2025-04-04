@@ -21,75 +21,101 @@ export function StatsCards() {
     totalEmployees: 0,
     totalAdmins: 0,
     todayCheckIns: {
-      total: 0,
-      completed: 0,
-      inProgress: 0,
+      uniqueUsers: 0,
+      uniqueCompleted: 0,
+      uniqueInProgress: 0,
     },
     locationsCount: 0,
     loading: true,
   })
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Vérifier d'abord si nous sommes authentifiés
-        const token = localStorage.getItem("auth_token")
-        console.log("Token d'authentification présent:", !!token)
-        if (!token) {
-          toast({
-            title: "Erreur d'authentification",
-            description: "Veuillez vous reconnecter",
-            variant: "destructive",
-          })
-          setStats((prev) => ({ ...prev, loading: false }))
-          return
-        }
-
-        // Récupérer les statistiques d'utilisateurs
-        const userStats = await api.users.getStats()
-        console.log("Statistiques utilisateurs reçues:", userStats)
-
-        // Récupérer le nombre de pointages aujourd'hui
-        const todayCheckInStats = await api.checkIns.getTodayCount()
-        console.log("Statistiques des pointages aujourd'hui:", todayCheckInStats)
-
-        // Récupérer le nombre de lieux de pointage
-        const locations = await api.locations.getAll()
-        console.log("Lieux de pointage:", locations)
-
-        setStats({
-          // Adapter à la structure réelle renvoyée par l'API
-          totalUsers: userStats.total || 0,
-          totalEmployees: userStats.employees?.count || 0,
-          totalAdmins: userStats.administrators?.count || 0,
-
-          // S'assurer que nous extrayons correctement les données de pointage
-          todayCheckIns: {
-            total: todayCheckInStats?.total || 0,
-            completed: todayCheckInStats?.details?.completed?.count || 0,
-            // Vérifier si inProgress existe ou utiliser une autre propriété comme "pending" ou "ongoing"
-            inProgress: todayCheckInStats?.details?.inProgress?.count || 
-                        todayCheckInStats?.details?.pending?.count || 
-                        todayCheckInStats?.details?.ongoing?.count || 
-                        (todayCheckInStats?.total - (todayCheckInStats?.details?.completed?.count || 0)) || 0,
-          },
-
-          locationsCount: locations?.length || 0,
-          loading: false,
-        })
-      } catch (error) {
-        console.error("Erreur lors de la récupération des statistiques:", error)
+  // Fonction pour récupérer les statistiques
+  const fetchStats = async () => {
+    try {
+      // Vérifier d'abord si nous sommes authentifiés
+      const token = localStorage.getItem("auth_token")
+      console.log("Token d'authentification présent:", !!token)
+      if (!token) {
         toast({
-          title: "Erreur",
-          description: "Impossible de charger les statistiques",
+          title: "Erreur d'authentification",
+          description: "Veuillez vous reconnecter",
           variant: "destructive",
         })
-
         setStats((prev) => ({ ...prev, loading: false }))
+        return
       }
-    }
 
+      // Récupérer les statistiques d'utilisateurs
+      const userStats = await api.users.getStats()
+      console.log("Statistiques utilisateurs reçues:", userStats)
+
+      // Récupérer les pointages du jour avec détails des utilisateurs
+      const todayData = await api.checkIns.getTodayWithUserDetails()
+      console.log("Pointages d'aujourd'hui avec détails:", todayData)
+
+      // Traiter les données pour obtenir les utilisateurs uniques
+      const uniqueUserIds = new Set();
+      const completedUserIds = new Set();
+      const inProgressUserIds = new Set();
+
+      // Parcourir les pointages pour collecter les utilisateurs uniques
+      if (todayData?.attendances && Array.isArray(todayData.attendances)) {
+        todayData.attendances.forEach((attendance: { user: { id: unknown }; status: string; clockOut: { date: any; time: any } }) => {
+          if (attendance.user && attendance.user.id) {
+            // Ajouter l'utilisateur au compteur d'utilisateurs uniques
+            uniqueUserIds.add(attendance.user.id);
+            
+            // Vérifier le statut du pointage
+            if (attendance.status === "Terminé" || 
+                (attendance.clockOut && attendance.clockOut.date && attendance.clockOut.time)) {
+              completedUserIds.add(attendance.user.id);
+            } else {
+              inProgressUserIds.add(attendance.user.id);
+            }
+          }
+        });
+      }
+
+      // Récupérer le nombre de lieux de pointage
+      const locations = await api.locations.getAll()
+      console.log("Lieux de pointage:", locations)
+
+      setStats({
+        // Adapter à la structure réelle renvoyée par l'API
+        totalUsers: userStats.total || 0,
+        totalEmployees: userStats.employees?.count || 0,
+        totalAdmins: userStats.administrators?.count || 0,
+
+        // Utiliser les données d'utilisateurs uniques qui ont pointé aujourd'hui
+        todayCheckIns: {
+          uniqueUsers: uniqueUserIds.size,
+          uniqueCompleted: completedUserIds.size,
+          uniqueInProgress: inProgressUserIds.size
+        },
+
+        locationsCount: locations?.length || 0,
+        loading: false,
+      })
+    } catch (error) {
+      console.error("Erreur lors de la récupération des statistiques:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les statistiques",
+        variant: "destructive",
+      })
+
+      setStats((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  useEffect(() => {
     fetchStats()
+
+    // Mettre en place un intervalle pour actualiser les données régulièrement
+    const intervalId = setInterval(fetchStats, 60000); // Actualiser toutes les minutes
+
+    // Nettoyer l'intervalle lors du démontage du composant
+    return () => clearInterval(intervalId);
   }, [toast])
 
   return (
@@ -113,23 +139,23 @@ export function StatsCards() {
 
       <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-none">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20">
-          <CardTitle className="text-sm font-medium">Pointages du jour</CardTitle>
+          <CardTitle className="text-sm font-medium">Pointage du jour</CardTitle>
           <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
             <CalendarIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
           </div>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {stats.loading ? "Chargement..." : stats.todayCheckIns.total}
+            {stats.loading ? "Chargement..." : stats.todayCheckIns.uniqueUsers}
           </div>
           <div className="flex flex-col space-y-1 text-xs text-muted-foreground mt-2">
             <div className="flex items-center">
               <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-              <span>{stats.loading ? "..." : `${stats.todayCheckIns.completed} terminés`}</span>
+              <span>{stats.loading ? "..." : `${stats.todayCheckIns.uniqueCompleted} utilisateurs avec pointage terminé`}</span>
             </div>
             <div className="flex items-center">
               <ClockIcon className="h-3 w-3 mr-1 text-orange-500" />
-              <span>{stats.loading ? "..." : `${stats.todayCheckIns.inProgress} en cours`}</span>
+              <span>{stats.loading ? "..." : `${stats.todayCheckIns.uniqueInProgress} utilisateurs en cours de pointage`}</span>
             </div>
           </div>
         </CardContent>
@@ -161,20 +187,20 @@ export function StatsCards() {
           <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
             {stats.loading || stats.totalUsers === 0
               ? "N/A"
-              : `${Math.round((stats.todayCheckIns.total / stats.totalUsers) * 100)}%`}
+              : `${Math.min(100, Math.round((stats.todayCheckIns.uniqueUsers / stats.totalUsers) * 100))}%`}
           </div>
           <div className="flex items-center pt-1 mt-2">
             {!stats.loading && stats.totalUsers > 0 && (
               <>
-                {stats.todayCheckIns.total > stats.totalUsers / 2 ? (
+                {stats.todayCheckIns.uniqueUsers > stats.totalUsers / 2 ? (
                   <ArrowUpIcon className="h-4 w-4 text-green-500" />
                 ) : (
                   <ArrowDownIcon className="h-4 w-4 text-red-500" />
                 )}
                 <span
-                  className={`text-xs ${stats.todayCheckIns.total > stats.totalUsers / 2 ? "text-green-500" : "text-red-500"}`}
+                  className={`text-xs ${stats.todayCheckIns.uniqueUsers > stats.totalUsers / 2 ? "text-green-500" : "text-red-500"}`}
                 >
-                  {stats.todayCheckIns.total} / {stats.totalUsers} utilisateurs
+                  {stats.todayCheckIns.uniqueUsers} / {stats.totalUsers} utilisateurs
                 </span>
               </>
             )}

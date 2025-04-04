@@ -33,7 +33,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [imageError, setImageError] = useState(false)
 
   const isActive = (path: string) => {
-    return pathname === path || pathname.startsWith(`${path}/`)
+    if (path === "/dashboard") {
+      // For dashboard home, only match exact path
+      return pathname === "/dashboard" || pathname === "/dashboard/";
+    }
+    // For other routes, match the specific path or its direct children
+    return pathname === path || 
+           (pathname.startsWith(`${path}/`) && 
+            pathname.split('/').length === path.split('/').length + 1);
   }
 
   // Version simplifiée pour récupérer l'URL de l'image

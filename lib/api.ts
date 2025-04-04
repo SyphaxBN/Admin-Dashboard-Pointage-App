@@ -399,6 +399,21 @@ export const api = {
         throw error
       }
     },
+
+    // Nouvelle méthode pour récupérer les pointages d'aujourd'hui avec détails utilisateurs
+    getTodayWithUserDetails: async () => {
+      try {
+        console.log("Récupération des pointages d'aujourd'hui avec détails utilisateurs...")
+        // Vérifier que l'URL correspond exactement à celle définie dans votre backend
+        const response = await fetchWithAuth("/attendance/today-details")
+        console.log("Réponse des pointages d'aujourd'hui avec détails:", response)
+        return response
+      } catch (error) {
+        console.error("Erreur lors de la récupération des pointages d'aujourd'hui avec détails:", error)
+        // Retourner une structure par défaut vide pour éviter les erreurs
+        return { count: 0, attendances: [] }
+      }
+    },
   },
 
   // Statistiques
@@ -406,6 +421,19 @@ export const api = {
     getDashboardStats: async () => {
       return fetchWithAuth("/users/stats")
     },
+    
+    // Nouvelle méthode pour obtenir les statistiques hebdomadaires
+    getWeeklyAttendanceStats: async () => {
+      try {
+        console.log("Récupération des statistiques hebdomadaires de pointage...")
+        const response = await fetchWithAuth("/attendance/weekly-stats")
+        console.log("Réponse des statistiques hebdomadaires:", response)
+        return response
+      } catch (error) {
+        console.error("Erreur lors de la récupération des statistiques hebdomadaires:", error)
+        throw error
+      }
+    }
   },
 }
 

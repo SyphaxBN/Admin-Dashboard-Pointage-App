@@ -35,6 +35,8 @@ interface UserType {
   createdAt?: string
   // Champ pour rétrocompatibilité
   avatar?: string
+  // Nouveau champ pour le statut de pointage du jour
+  hasCheckedInToday?: boolean
 }
 
 interface UserTableProps {
@@ -49,12 +51,42 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
   const [isLoading, setIsLoading] = useState(!isPreloaded)
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [todayCheckIns, setTodayCheckIns] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (!isPreloaded) {
       fetchUsers()
+      fetchTodayCheckIns()
     }
   }, [isPreloaded])
+
+  const fetchTodayCheckIns = async () => {
+    try {
+      // Utiliser l'endpoint qui fournit les pointages avec détails utilisateurs
+      const todayData = await api.checkIns.getTodayWithUserDetails();
+      console.log("Pointages d'aujourd'hui avec détails:", todayData);
+
+      // Créer un objet avec les IDs des utilisateurs qui ont pointé aujourd'hui
+      const checkInsMap: Record<string, boolean> = {};
+
+      if (todayData && Array.isArray(todayData.attendances)) {
+        todayData.attendances.forEach((attendance: any) => {
+          // Le backend envoie maintenant les détails de l'utilisateur directement dans l'objet user
+          if (attendance.user && attendance.user.id) {
+            checkInsMap[attendance.user.id] = true;
+            console.log(`Pointage trouvé pour ${attendance.user.name} (ID: ${attendance.user.id})`);
+          }
+        });
+      }
+
+      console.log("Mapping final des utilisateurs ayant pointé aujourd'hui:", checkInsMap);
+      console.log("Nombre d'utilisateurs ayant pointé:", Object.keys(checkInsMap).length);
+      
+      setTodayCheckIns(checkInsMap);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des pointages du jour:", error);
+    }
+  }
 
   const fetchUsers = async () => {
     setIsLoading(true)
@@ -75,9 +107,11 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
         createdAt: user.createdAt,
         // Conserver les champs existants pour la rétrocompatibilité
         department: user.department,
-        status: true, // Par défaut, les utilisateurs sont considérés comme actifs
+        status: user.status,
         date: user.date || user.createdAt, // Fallback pour l'ancien champ date
         avatar: user.avatar || user.photo, // Fallback pour l'ancien champ avatar
+        // Vérifier si l'utilisateur a pointé aujourd'hui en utilisant le mapping
+        hasCheckedInToday: todayCheckIns[user.id] === true
       }))
 
       setUsers(formattedUsers)
@@ -112,6 +146,52 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
       })
     } finally {
       setUserToDelete(null)
+    }
+  }
+
+  const handlePromoteToAdmin = async (userId: string) => {
+    try {
+      await api.auth.promoteToAdmin(userId)
+      // Update the user in the local state
+      setUsers(
+        users.map((user) => 
+          user.id === userId ? { ...user, role: "ADMIN" } : user
+        )
+      )
+      toast({
+        title: "Succès",
+        description: "L'utilisateur a été promu administrateur avec succès",
+      })
+    } catch (error) {
+      console.error("Erreur lors de la promotion de l'utilisateur:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de promouvoir l'utilisateur",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDemoteFromAdmin = async (userId: string) => {
+    try {
+      await api.auth.demoteFromAdmin(userId)
+      // Update the user in the local state
+      setUsers(
+        users.map((user) => 
+          user.id === userId ? { ...user, role: "USER" } : user
+        )
+      )
+      toast({
+        title: "Succès",
+        description: "L'administrateur a été rétrogradé avec succès",
+      })
+    } catch (error) {
+      console.error("Erreur lors de la rétrogradation de l'administrateur:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de rétrograder l'administrateur",
+        variant: "destructive",
+      })
     }
   }
 
@@ -209,12 +289,18 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center">
-                      {user.status !== false ? (
-                        <div className="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
+                      {todayCheckIns[user.id] ? (
+                        <div
+                          className="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center"
+                          title="A pointé aujourd'hui"
+                        >
                           <Check className="h-4 w-4 text-white" />
                         </div>
                       ) : (
-                        <div className="h-6 w-6 rounded-full bg-red-500 flex items-center justify-center">
+                        <div
+                          className="h-6 w-6 rounded-full bg-red-500 flex items-center justify-center"
+                          title="N'a pas pointé aujourd'hui"
+                        >
                           <X className="h-4 w-4 text-white" />
                         </div>
                       )}
@@ -222,16 +308,40 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
                   </TableCell>
                   <TableCell>{user.createdAt || user.date || "Date inconnue"}</TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => setUserToDelete(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Supprimer
-                      </Button>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        {user.role === "USER" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20"
+                            onClick={() => handlePromoteToAdmin(user.id)}
+                          >
+                            Promouvoir Admin
+                          </Button>
+                        )}
+                        {user.role === "ADMIN" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20"
+                            onClick={() => handleDemoteFromAdmin(user.id)}
+                          >
+                            Rétrograder
+                          </Button>
+                        )}
+                      </div>
+                      <div className="ml-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 w-[110px]"
+                          onClick={() => setUserToDelete(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Supprimer
+                        </Button>
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>

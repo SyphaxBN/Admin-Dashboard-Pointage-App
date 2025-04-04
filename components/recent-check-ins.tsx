@@ -126,14 +126,11 @@ export function RecentCheckIns() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Link href={`/dashboard/historique-de-pointage?user=${checkIn.id}`}>
+                  <Link href={`/dashboard/historique-de-pointage`}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             ))}

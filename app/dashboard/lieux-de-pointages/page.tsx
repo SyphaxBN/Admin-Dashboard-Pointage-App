@@ -6,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LocationsList } from "@/components/locations-list"
 import { CheckInChart } from "@/components/check-in-chart"
 
+// Fonction utilitaire pour formater la date en français
+function formatMonthYear(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    month: "long",
+    year: "numeric",
+  }
+  return new Intl.DateTimeFormat("fr-FR", options).format(date)
+}
+
 export default function LocationsPage() {
   const [currentDate, setCurrentDate] = useState<Date | undefined>(new Date())
 
@@ -20,19 +29,11 @@ export default function LocationsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-center">
-              {currentDate?.toLocaleDateString('fr-FR', {
-                month: 'long',
-                year: 'numeric'
-              })}
+              {currentDate ? formatMonthYear(currentDate) : "Sélectionnez une date"}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Calendar 
-              mode="single" 
-              selected={currentDate} 
-              onSelect={setCurrentDate}
-              className="rounded-md" 
-            />
+            <Calendar mode="single" selected={currentDate} onSelect={setCurrentDate} className="rounded-md" />
           </CardContent>
         </Card>
 

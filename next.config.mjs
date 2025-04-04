@@ -18,8 +18,7 @@ const nextConfig = {
   },
   experimental: {
     webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
+    // Removing unsupported experimental options
   },
 }
 

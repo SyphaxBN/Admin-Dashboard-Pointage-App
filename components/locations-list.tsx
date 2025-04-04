@@ -22,11 +22,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { Badge } from "@/components/ui/badge"
 
 interface Location {
   id: string
@@ -54,7 +54,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [locationToEdit, setLocationToEdit] = useState<Location | null>(null)
-  
+
   const [newLocation, setNewLocation] = useState({
     name: "",
     latitude: 0,
@@ -156,15 +156,11 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
       })
 
       // Mettre à jour la liste des lieux
-      setLocations(
-        locations.map((loc) =>
-          loc.id === locationToEdit.id ? { ...locationToEdit } : loc
-        )
-      )
+      setLocations(locations.map((loc) => (loc.id === locationToEdit.id ? { ...locationToEdit } : loc)))
 
       setIsEditDialogOpen(false)
       setLocationToEdit(null)
-      
+
       toast({
         title: "Succès",
         description: "Le lieu de pointage a été mis à jour avec succès",
@@ -187,10 +183,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
     <>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-medium">Liste des lieux ({locations.length})</h3>
-        <Button 
-          onClick={() => setIsAddDialogOpen(true)} 
-          className="flex items-center gap-2"
-        >
+        <Button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Ajouter un lieu
         </Button>
@@ -200,20 +193,14 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <MapPin className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun lieu de pointage</h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Commencez par ajouter un lieu de pointage pour vos employés.
-          </p>
-          <Button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="mt-6"
-            variant="outline"
-          >
+          <p className="mt-2 text-sm text-gray-500">Commencez par ajouter un lieu de pointage pour vos employés.</p>
+          <Button onClick={() => setIsAddDialogOpen(true)} className="mt-6" variant="outline">
             Ajouter un lieu
           </Button>
         </div>
       ) : (
-        <div className="space-y-6 bg-white rounded-lg shadow overflow-hidden">
-          <div className="grid grid-cols-12 bg-gray-100 p-4 text-sm font-medium text-gray-500">
+        <div className="space-y-6 bg-white dark:bg-gray-800/60 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <div className="grid grid-cols-12 bg-gray-100 dark:bg-gray-700/50 p-4 text-sm font-medium text-gray-500 dark:text-gray-300">
             <div className="col-span-5">Nom</div>
             <div className="col-span-2 text-center">Rayon</div>
             <div className="col-span-2 text-center">Pointages</div>
@@ -223,22 +210,25 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
 
           {locations.map((location) => (
             <div key={location.id}>
-              <div className="grid grid-cols-12 p-4 items-center">
+              <div className="grid grid-cols-12 px-4 pt-0 pb-3 items-center">
                 <div className="col-span-5">
                   <div className="font-medium">{location.name}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     Lat: {location.latitude.toFixed(6)}, Long: {location.longitude.toFixed(6)}
                   </div>
                 </div>
                 <div className="col-span-2 text-center">{location.radius} m</div>
                 <div className="col-span-2 text-center">
-                  {location.stats.totalPointages} {location.stats.label}
+                  <Badge variant="outline" className="bg-primary/10 hover:bg-primary/20 transition-colors">
+                    {location.stats.totalPointages} {location.stats.label}
+                  </Badge>
                 </div>
                 <div className="col-span-2 text-center">{location.dateAjout}</div>
                 <div className="col-span-1 flex justify-end gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-primary/10"
                     onClick={() => {
                       setLocationToEdit(location)
                       setIsEditDialogOpen(true)
@@ -249,9 +239,10 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20"
                     onClick={() => setLocationToDelete(location.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
               </div>
@@ -266,9 +257,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ajouter un lieu de pointage</DialogTitle>
-            <DialogDescription>
-              Entrez les informations du nouveau lieu de pointage.
-            </DialogDescription>
+            <DialogDescription>Entrez les informations du nouveau lieu de pointage.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
@@ -288,7 +277,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                   type="number"
                   step="0.000001"
                   value={newLocation.latitude || ""}
-                  onChange={(e) => setNewLocation({ ...newLocation, latitude: parseFloat(e.target.value) })}
+                  onChange={(e) => setNewLocation({ ...newLocation, latitude: Number.parseFloat(e.target.value) })}
                   placeholder="ex: 36.752887"
                 />
               </div>
@@ -299,7 +288,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                   type="number"
                   step="0.000001"
                   value={newLocation.longitude || ""}
-                  onChange={(e) => setNewLocation({ ...newLocation, longitude: parseFloat(e.target.value) })}
+                  onChange={(e) => setNewLocation({ ...newLocation, longitude: Number.parseFloat(e.target.value) })}
                   placeholder="ex: 3.042048"
                 />
               </div>
@@ -310,7 +299,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                 id="radius"
                 type="number"
                 value={newLocation.radius}
-                onChange={(e) => setNewLocation({ ...newLocation, radius: parseInt(e.target.value) })}
+                onChange={(e) => setNewLocation({ ...newLocation, radius: Number.parseInt(e.target.value) })}
                 placeholder="ex: 100"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -332,9 +321,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Modifier le lieu de pointage</DialogTitle>
-            <DialogDescription>
-              Mettez à jour les informations du lieu de pointage.
-            </DialogDescription>
+            <DialogDescription>Mettez à jour les informations du lieu de pointage.</DialogDescription>
           </DialogHeader>
           {locationToEdit && (
             <div className="space-y-4 py-2">
@@ -354,7 +341,9 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                     type="number"
                     step="0.000001"
                     value={locationToEdit.latitude}
-                    onChange={(e) => setLocationToEdit({ ...locationToEdit, latitude: parseFloat(e.target.value) })}
+                    onChange={(e) =>
+                      setLocationToEdit({ ...locationToEdit, latitude: Number.parseFloat(e.target.value) })
+                    }
                   />
                 </div>
                 <div>
@@ -364,7 +353,9 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                     type="number"
                     step="0.000001"
                     value={locationToEdit.longitude}
-                    onChange={(e) => setLocationToEdit({ ...locationToEdit, longitude: parseFloat(e.target.value) })}
+                    onChange={(e) =>
+                      setLocationToEdit({ ...locationToEdit, longitude: Number.parseFloat(e.target.value) })
+                    }
                   />
                 </div>
               </div>
@@ -374,7 +365,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
                   id="edit-radius"
                   type="number"
                   value={locationToEdit.radius}
-                  onChange={(e) => setLocationToEdit({ ...locationToEdit, radius: parseInt(e.target.value) })}
+                  onChange={(e) => setLocationToEdit({ ...locationToEdit, radius: Number.parseInt(e.target.value) })}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Définit la zone dans laquelle les utilisateurs pourront effectuer leur pointage.
@@ -392,7 +383,7 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
       </Dialog>
 
       {/* Dialog de confirmation de suppression */}
-      <AlertDialog open={!!locationToDelete} onOpenChange={(open) => !open && setLocationToDelete(null)}>
+      <AlertDialog open={!!locationToDelete} onOpenChange={(open: any) => !open && setLocationToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>

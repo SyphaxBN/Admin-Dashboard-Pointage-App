@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
 import { api } from "@/lib/api"
+import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,16 +25,16 @@ export default function LoginPage() {
     const checkAuth = () => {
       if (api.auth.isAuthenticated()) {
         console.log("Utilisateur déjà connecté, redirection vers le tableau de bord")
-        router.push('/dashboard')
+        router.push("/dashboard")
       }
     }
-    
+
     checkAuth()
   }, [router])
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     // Réinitialiser le message d'erreur
     setErrorMessage("")
 
@@ -59,13 +60,13 @@ export default function LoginPage() {
         if (response.error === true) {
           // Utiliser le message d'erreur du backend
           setErrorMessage(response.message || "Erreur d'authentification")
-          
+
           toast({
             title: "Accès refusé",
             description: response.message || "Erreur d'authentification",
             variant: "destructive",
           })
-          
+
           return
         }
 
@@ -150,32 +151,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1535] flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-xl">
+    <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-800 dark:from-blue-900 dark:to-blue-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl bg-white dark:bg-gray-900 rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl">
         {/* Left side with logo */}
-        <div className="md:w-1/2 bg-white p-8 flex items-center justify-center">
+        <div className="md:w-1/2 bg-white dark:bg-gray-900 p-8 flex items-center justify-center">
           <div className="w-40 h-40 md:w-64 md:h-64">
-            <Image 
-              src="https://st2.depositphotos.com/47577860/46107/v/450/depositphotos_461072634-stock-illustration-smartphone-delivery-phone-icon.jpg" 
-              alt="Logo" 
-              width={300} 
-              height={300} 
-              className="w-full h-full object-contain" 
+            <Image
+              src="https://st2.depositphotos.com/47577860/46107/v/450/depositphotos_461072634-stock-illustration-smartphone-delivery-phone-icon.jpg"
+              alt="Logo"
+              width={300}
+              height={300}
+              className="w-full h-full object-contain"
             />
           </div>
         </div>
-        
+
         {/* Right side with login form */}
         <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative">
           <div className="max-w-md mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Bienvenue de retour !</h1>
-            <p className="text-gray-600 mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">Bienvenue de retour !</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
               Connectez-vous pour accéder au tableau de bord et gérer les utilisateurs, les pointages et les paramètres
               du système.
             </p>
 
             {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-md">
                 {errorMessage}
               </div>
             )}
@@ -208,13 +209,23 @@ export default function LoginPage() {
               <div className="flex justify-between items-center pt-4">
                 <Button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-2 h-12 rounded-lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 h-12 rounded-lg flex items-center gap-2"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Connexion..." : "Se connecter"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Connexion...
+                    </>
+                  ) : (
+                    "Se connecter"
+                  )}
                 </Button>
 
-                <Link href="/forgot-password" className="text-blue-500 text-sm">
+                <Link
+                  href="/forgot-password"
+                  className="text-blue-500 text-sm hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                >
                   Mot de passe oublié ?
                 </Link>
               </div>
@@ -222,7 +233,7 @@ export default function LoginPage() {
           </div>
 
           {/* Background shape */}
-          <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gray-100 -z-10 rounded-tr-[200px]"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gray-100 dark:bg-gray-800 -z-10 rounded-tr-[200px]"></div>
         </div>
       </div>
     </div>

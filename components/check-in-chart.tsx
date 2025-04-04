@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
+import { api } from "@/lib/api"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
 interface CheckInStats {
   day: string
@@ -21,22 +23,49 @@ export function CheckInChart() {
   const fetchCheckInStats = async () => {
     setIsLoading(true)
     try {
-      // Comme il n'y a pas d'endpoint spécifique pour les statistiques de pointage,
-      // nous allons créer des données fictives basées sur les 7 derniers jours
-      const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"]
-      const today = new Date().getDay() // 0 = Dimanche, 1 = Lundi, etc.
+      // Récupérer les données des 7 derniers jours
+      const today = new Date()
+      const dates = []
 
-      const mockStats = []
-      for (let i = 0; i < 7; i++) {
-        const dayIndex = (today - i + 7) % 7 // Pour obtenir les 7 derniers jours en commençant par aujourd'hui
-        mockStats.push({
-          day: days[dayIndex],
-          count: Math.floor(Math.random() * 50) + 30, // Valeur aléatoire entre 30 et 80
-        })
+      // Générer les 7 derniers jours
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(today.getDate() - i)
+        dates.push(date.toISOString().split("T")[0]) // Format YYYY-MM-DD
       }
 
-      // Inverser pour avoir l'ordre chronologique
-      setStats(mockStats.reverse())
+      // Récupérer les données pour chaque jour
+      const statsPromises = dates.map(async (date) => {
+        try {
+          const data = await api.checkIns.getByDate(date)
+          // Compter le nombre de pointages pour cette date
+          const count = Array.isArray(data)
+            ? data.length
+            : data && Array.isArray(data.attendances)
+              ? data.attendances.length
+              : 0
+
+          // Formater la date pour l'affichage
+          const displayDate = new Date(date)
+          const dayName = displayDate.toLocaleDateString("fr-FR", { weekday: "short" })
+
+          return {
+            day: dayName,
+            date: date,
+            count: count,
+          }
+        } catch (error) {
+          console.error(`Erreur lors de la récupération des données pour ${date}:`, error)
+          return {
+            day: new Date(date).toLocaleDateString("fr-FR", { weekday: "short" }),
+            date: date,
+            count: 0,
+          }
+        }
+      })
+
+      const results = await Promise.all(statsPromises)
+      setStats(results)
     } catch (error) {
       console.error("Erreur lors de la récupération des statistiques de pointage:", error)
       toast({
@@ -59,30 +88,32 @@ export function CheckInChart() {
     }
   }
 
-  const maxValue = Math.max(...stats.map((stat) => stat.count))
-
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-card pb-2">
         <CardTitle className="text-base font-medium">Fréquence des Pointages Cette Semaine</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 pt-4">
         {isLoading ? (
           <div className="flex justify-center items-center h-[200px]">Chargement...</div>
         ) : (
-          <div className="flex h-[200px] items-end gap-2">
-            {stats.map((stat) => (
-              <div key={stat.day} className="flex flex-1 flex-col items-center gap-2">
-                <div
-                  className="w-full bg-blue-500 rounded-sm transition-all duration-500 ease-in-out"
-                  style={{
-                    height: `${(stat.count / maxValue) * 180}px`,
-                  }}
-                />
-                <span className="text-xs text-gray-500">{stat.day}</span>
-              </div>
-            ))}
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={stats} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+              <YAxis hide={true} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "var(--card)",
+                  borderColor: "var(--border)",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                }}
+                formatter={(value) => [`${value} pointages`, "Nombre"]}
+                labelFormatter={(label) => `${label}`}
+              />
+              <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={30} animationDuration={1000} />
+            </BarChart>
+          </ResponsiveContainer>
         )}
       </CardContent>
     </Card>

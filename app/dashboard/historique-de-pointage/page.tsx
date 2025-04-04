@@ -9,10 +9,10 @@ import { useToast } from "@/components/ui/use-toast"
 function CheckInHistoryContent() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
-  const userId = searchParams.get('user') || undefined
+  const userId = searchParams.get("user") || undefined
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const handleDateChange = (date: string | null) => {
     setSelectedDate(date)
   }
@@ -21,16 +21,10 @@ function CheckInHistoryContent() {
     <>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Historique de pointage</h1>
-        <p className="text-gray-500">
-          Consultez et gérez l'historique des pointages de tous les utilisateurs.
-        </p>
+        <p className="text-gray-500">Consultez et gérez l'historique des pointages de tous les utilisateurs.</p>
       </div>
-      
-      <CheckInHistory 
-        userId={userId} 
-        date={selectedDate || undefined} 
-        onDateChange={handleDateChange} 
-      />
+
+      <CheckInHistory userId={userId} date={selectedDate || undefined} onDateChange={handleDateChange} />
     </>
   )
 }

@@ -4,9 +4,11 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 export function DashboardFeatures() {
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-none border-l-4 border-l-blue-500 dark:border-l-blue-400">
         <CardHeader className="flex flex-row items-center gap-4">
-          <UserIcon className="h-8 w-8 text-blue-900" />
+          <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <UserIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          </div>
           <div>
             <CardTitle>Gérer les utilisateurs</CardTitle>
             <CardDescription>
@@ -17,9 +19,11 @@ export function DashboardFeatures() {
         </CardHeader>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-none border-l-4 border-l-purple-500 dark:border-l-purple-400">
         <CardHeader className="flex flex-row items-center gap-4">
-          <BuildingIcon className="h-8 w-8 text-blue-900" />
+          <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <BuildingIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          </div>
           <div>
             <CardTitle>Gérer les lieux de pointage</CardTitle>
             <CardDescription>
@@ -30,9 +34,11 @@ export function DashboardFeatures() {
         </CardHeader>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-none border-l-4 border-l-green-500 dark:border-l-green-400">
         <CardHeader className="flex flex-row items-center gap-4">
-          <ClipboardListIcon className="h-8 w-8 text-blue-900" />
+          <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <ClipboardListIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+          </div>
           <div>
             <CardTitle>Voir l'historique</CardTitle>
             <CardDescription>

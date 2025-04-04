@@ -112,11 +112,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original.id} />,
+    cell: ({ row }: { row: any }) => <DragHandle id={row.original.id} />,
   },
   {
     id: "select",
-    header: ({ table }) => (
+    header: ({ table }: { table: any }) => (
       <div className="flex items-center justify-center">
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
@@ -125,7 +125,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         />
       </div>
     ),
-    cell: ({ row }) => (
+    cell: ({ row }: { row: any }) => (
       <div className="flex items-center justify-center">
         <Checkbox
           checked={row.getIsSelected()}
@@ -140,7 +140,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     accessorKey: "header",
     header: "Header",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       return <TableCellViewer item={row.original} />
     },
     enableHiding: false,
@@ -286,7 +286,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
         transition: transition,
       }}
     >
-      {row.getVisibleCells().map((cell) => (
+      {row.getVisibleCells().map((cell: any) => (
         <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
       ))}
     </TableRow>
@@ -322,7 +322,7 @@ export function DataTable({
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row: any) => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -400,8 +400,8 @@ export function DataTable({
             <DropdownMenuContent align="end" className="w-56">
               {table
                 .getAllColumns()
-                .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
-                .map((column) => {
+                .filter((column: any) => typeof column.accessorFn !== "undefined" && column.getCanHide())
+                .map((column: any) => {
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -432,9 +432,9 @@ export function DataTable({
           >
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-muted">
-                {table.getHeaderGroups().map((headerGroup) => (
+                {table.getHeaderGroups().map((headerGroup: any) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
+                    {headerGroup.headers.map((header: any) => {
                       return (
                         <TableHead key={header.id} colSpan={header.colSpan}>
                           {header.isPlaceholder
@@ -449,7 +449,7 @@ export function DataTable({
               <TableBody className="**:data-[slot=table-cell]:first:w-8">
                 {table.getRowModel().rows?.length ? (
                   <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
-                    {table.getRowModel().rows.map((row) => (
+                    {table.getRowModel().rows.map((row: any) => (
                       <DraggableRow key={row.id} row={row} />
                     ))}
                   </SortableContext>

@@ -1,18 +1,27 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { UserTable } from "@/components/user-table"
 import { api } from "@/lib/api"
 import { useToast } from "@/components/ui/use-toast"
 
+// Fonction utilitaire pour formater la date en français
+function formatMonthYear(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    month: "long",
+    year: "numeric",
+  }
+  return new Intl.DateTimeFormat("fr-FR", options).format(date)
+}
+
 export default function UsersPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery] = useState("")
   const [users, setUsers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const { toast } = useToast()
 
   useEffect(() => {
@@ -20,7 +29,7 @@ export default function UsersPage() {
       try {
         setIsLoading(true)
         const data = await api.users.getAll()
-        
+
         if (Array.isArray(data)) {
           setUsers(data)
         } else {
@@ -57,16 +66,6 @@ export default function UsersPage() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="md:col-span-2">
-        <div className="mb-6 relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher par nom ou email"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10"
-          />
-        </div>
-        
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -79,10 +78,15 @@ export default function UsersPage() {
       <div>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-center">Avril 2025</CardTitle>
+            <CardTitle className="text-center">{formatMonthYear(currentDate)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Calendar mode="single" selected={new Date(2025, 4, 3)} className="rounded-md" />
+            <Calendar
+              mode="single"
+              selected={currentDate}
+              onSelect={(date) => date && setCurrentDate(date)}
+              className="rounded-md"
+            />
           </CardContent>
         </Card>
       </div>

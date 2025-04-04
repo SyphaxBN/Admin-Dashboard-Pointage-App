@@ -3,7 +3,14 @@
 import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboardIcon, UsersIcon, MapPinIcon, ClockIcon, SettingsIcon, BellIcon, LogOutIcon, User } from "lucide-react"
+import {
+  LayoutDashboardIcon,
+  UsersIcon,
+  MapPinIcon,
+  ClockIcon,
+  LogOutIcon,
+  User,
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Sidebar,
@@ -13,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/components/providers"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -22,133 +30,133 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { user, isLoading, logout, refreshUser } = useAuth()
   const [localUser, setLocalUser] = useState<any>(null)
+  const [imageError, setImageError] = useState(false)
 
   const isActive = (path: string) => {
     return pathname === path || pathname.startsWith(`${path}/`)
   }
 
-  // Méthode améliorée pour obtenir l'URL de l'image
+  // Version simplifiée pour récupérer l'URL de l'image
   const getImageUrl = (user: any) => {
-    if (!user) {
-      console.log("Aucun utilisateur fourni");
-      return null;
-    }
-    
-    // Journal de débogage pour voir les chemins exacts
-    console.log("Photo path:", user.photo);
-    console.log("Avatar path:", user.avatar);
-    
-    // Vérifier et utiliser photo ou avatar
-    if (user.photo) {
-      // Si c'est une URL complète (http ou https)
-      if (user.photo.startsWith('http')) {
-        console.log("URL complète trouvée pour photo:", user.photo);
-        return user.photo;
-      }
-      
-      // Si c'est un chemin relatif du backend
-      if (user.photo.startsWith('/')) {
-        const url = `http://localhost:8000${user.photo}`;
-        console.log("URL backend construite pour photo:", url);
-        return url;
-      }
-      
-      // Si c'est une autre forme de chemin
-      console.log("Autre format de chemin photo:", user.photo);
-      return user.photo;
-    }
-    
-    // Tenter d'utiliser avatar si photo n'est pas disponible
-    if (user.avatar) {
-      // Si c'est une URL complète
-      if (user.avatar.startsWith('http')) {
-        console.log("URL complète trouvée pour avatar:", user.avatar);
-        return user.avatar;
-      }
-      
-      // Si c'est un chemin relatif du backend
-      if (user.avatar.startsWith('/')) {
-        const url = `http://localhost:8000${user.avatar}`;
-        console.log("URL backend construite pour avatar:", url);
-        return url;
-      }
-      
-      // Si c'est une autre forme de chemin
-      console.log("Autre format de chemin avatar:", user.avatar);
-      return user.avatar;
-    }
-    
-    console.log("Aucune image trouvée pour l'utilisateur");
-    return null;
-  };
+    if (!user) return null
 
-  // Essayer de récupérer l'utilisateur du localStorage si user est null
+    // URL de base du backend
+    const API_BASE_URL = 'http://localhost:8000'
+    
+    // Priorité à la photo de profil provenant de la réponse auth
+    if (user.photo) {
+      // URL complète
+      if (user.photo.startsWith('http')) {
+        return user.photo
+      }
+      
+      // Chemin relatif depuis le backend - format attendu dans la réponse auth
+      if (user.photo.startsWith('/')) {
+        return `${API_BASE_URL}${user.photo}`
+      }
+      
+      // Autre format
+      return `${API_BASE_URL}/${user.photo}`
+    }
+    
+    // Fallback sur avatar si disponible
+    if (user.avatar) {
+      if (user.avatar.startsWith('http')) return user.avatar
+      if (user.avatar.startsWith('/')) return `${API_BASE_URL}${user.avatar}`
+      return `${API_BASE_URL}/${user.avatar}`
+    }
+    
+    return null
+  }
+
+  // Réinitialiser l'erreur d'image quand l'utilisateur change
+  useEffect(() => {
+    if (user) setImageError(false)
+  }, [user])
+
+  // Récupérer l'utilisateur du localStorage si nécessaire
   useEffect(() => {
     if (!user && !isLoading) {
       try {
-        const storedUser = localStorage.getItem("auth_user");
+        const storedUser = localStorage.getItem("auth_user")
         if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setLocalUser(parsedUser);
+          const parsedUser = JSON.parse(storedUser)
+          setLocalUser(parsedUser)
+          // Réinitialiser l'erreur d'image pour le nouvel utilisateur
+          setImageError(false)
         }
       } catch (error) {
-        console.error("Erreur lors de la récupération de l'utilisateur du localStorage:", error);
+        console.error("Erreur lors de la récupération de l'utilisateur du localStorage:", error)
       }
     } else if (user) {
-      setLocalUser(null); // Effacer le localUser quand user est chargé
+      setLocalUser(null) // Effacer le localUser quand user est chargé
     }
-  }, [user, isLoading]);
-  
-  // Forcer une actualisation des données utilisateur au montage du composant
-  useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+  }, [user, isLoading])
 
-  // Utiliser user du contexte ou localUser si user est null
-  const displayUser = user || localUser;
+  // Actualisation des données utilisateur au montage du composant
+  useEffect(() => {
+    refreshUser()
+  }, [refreshUser])
+
+  // Utilisateur à afficher (contexte ou localStorage)
+  const displayUser = user || localUser
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="border-b pb-2">
         <SidebarMenu>
           <SidebarMenuItem>
             {isLoading ? (
               <div className="flex items-center gap-2 p-2">
-                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-32" />
                 </div>
               </div>
             ) : displayUser ? (
-              <SidebarMenuButton className="flex items-center gap-2 p-2">
-                <Avatar className="h-8 w-8">
-                  {getImageUrl(displayUser) ? (
-                    <AvatarImage 
-                      src={getImageUrl(displayUser)} 
-                      alt={displayUser.name || 'Utilisateur'} 
-                      onError={(e) => {
-                        console.error("Erreur de chargement de l'image:", e);
-                        // Cacher l'image en cas d'erreur pour afficher le fallback
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <AvatarFallback>
-                      {displayUser.name && displayUser.name.length > 0 
-                        ? displayUser.name.charAt(0).toUpperCase() 
-                        : <User className="h-4 w-4" />}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <span className="font-medium">{displayUser.name}</span>
+              <SidebarMenuButton className="flex items-center gap-3 p-2 hover:bg-sidebar-accent/50 h-auto">
+                <div className="relative min-w-[40px] h-10">
+                  <Avatar className="h-10 w-10 absolute top-0 left-0 border border-primary/10">
+                    {getImageUrl(displayUser) && !imageError ? (
+                      <AvatarImage
+                        src={getImageUrl(displayUser)}
+                        alt={displayUser.name || "Utilisateur"}
+                        className="object-cover"
+                        onError={(e) => {
+                          console.error("Erreur de chargement de l'image:", e)
+                          console.log("URL ayant échoué:", getImageUrl(displayUser))
+                          setImageError(true)
+                        }}
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-primary/5 text-primary">
+                        {displayUser.name && displayUser.name.length > 0 ? (
+                          displayUser.name.charAt(0).toUpperCase()
+                        ) : (
+                          <User className="h-5 w-5" />
+                        )}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </div>
+                <div className="flex flex-col w-full overflow-hidden pr-2">
+                  <span className="font-medium truncate">
+                    {displayUser.name || "Utilisateur"}
+                  </span>
+                  <span className="text-xs text-muted-foreground w-full text-ellipsis">
+                    {displayUser.email || ""}
+                  </span>
+                </div>
               </SidebarMenuButton>
             ) : (
               <SidebarMenuButton asChild>
                 <Link href="/login" className="flex items-center gap-2 p-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>?</AvatarFallback>
-                  </Avatar>
+                  <div className="min-w-[40px]">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>?</AvatarFallback>
+                    </Avatar>
+                  </div>
                   <span className="font-medium">Se connecter</span>
                 </Link>
               </SidebarMenuButton>
@@ -158,76 +166,69 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarMenu>
+        <SidebarMenu className="space-y-1.5">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard")}>
-              <Link href="/dashboard">
-                <LayoutDashboardIcon className="h-5 w-5" />
-                <span>Accueil</span>
+            <SidebarMenuButton 
+              asChild 
+              isActive={isActive("/dashboard")}
+              className="py-3.5 text-base"
+            >
+              <Link href="/dashboard" className="group">
+                <LayoutDashboardIcon className="h-5 w-5 transition-colors group-hover:text-primary" />
+                <span className="flex items-center translate-y-[1px]">Accueil</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/utilisateurs")}>
-              <Link href="/dashboard/utilisateurs">
-                <UsersIcon className="h-5 w-5" />
-                <span>Utilisateurs</span>
+            <SidebarMenuButton 
+              asChild 
+              isActive={isActive("/dashboard/utilisateurs")}
+              className="py-3.5 text-base"
+            >
+              <Link href="/dashboard/utilisateurs" className="group">
+                <UsersIcon className="h-5 w-5 transition-colors group-hover:text-primary" />
+                <span className="flex items-center translate-y-[1px]">Utilisateurs</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/lieux-de-pointages")}>
-              <Link href="/dashboard/lieux-de-pointages">
-                <MapPinIcon className="h-5 w-5" />
-                <span>Lieux de pointages</span>
+            <SidebarMenuButton 
+              asChild 
+              isActive={isActive("/dashboard/lieux-de-pointages")}
+              className="py-3.5 text-base"
+            >
+              <Link href="/dashboard/lieux-de-pointages" className="group">
+                <MapPinIcon className="h-5 w-5 transition-colors group-hover:text-primary" />
+                <span className="flex items-center translate-y-[1px]">Lieux de pointages</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/historique-de-pointage")}>
-              <Link href="/dashboard/historique-de-pointage">
-                <ClockIcon className="h-5 w-5" />
-                <span>Historique de pointage</span>
+            <SidebarMenuButton 
+              asChild 
+              isActive={isActive("/dashboard/historique-de-pointage")}
+              className="py-3.5 text-base"
+            >
+              <Link href="/dashboard/historique-de-pointage" className="group">
+                <ClockIcon className="h-5 w-5 transition-colors group-hover:text-primary" />
+                <span className="flex items-center translate-y-[1px]">Historique de pointage</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <div className="mt-6 pt-6 border-t">
-          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Paramètres</h3>
-
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard/parametres">
-                  <SettingsIcon className="h-5 w-5" />
-                  <span>Paramètres</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard/notifications">
-                  <BellIcon className="h-5 w-5" />
-                  <span>Notifications</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </div>
       </SidebarContent>
 
-      <SidebarFooter>
-        {user && (
+      <SidebarFooter className="border-t pt-2">
+        {displayUser && (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={logout}
-                className="flex items-center gap-2 p-2 text-red-500 hover:text-red-700"
+                className="flex items-center gap-2 p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600"
               >
                 <LogOutIcon className="h-5 w-5" />
                 <span>Se déconnecter</span>

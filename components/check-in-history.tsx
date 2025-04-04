@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Calendar, Trash2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { ArrowDown, ArrowUp, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // Interface mise à jour pour correspondre à la structure de données du backend
 interface Attendance {
@@ -28,10 +29,12 @@ interface Attendance {
   clockOutDate: string | null
   clockOutTime: string | null
   locationId?: string
-  location?: string | {
-    name: string
-    id: string
-  }
+  location?:
+    | string
+    | {
+        name: string
+        id: string
+      }
   coordinates?: {
     latitude: number
     longitude: number
@@ -66,15 +69,27 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
 
   // Fonction de formatage simple pour éviter les problèmes d'importation
   const formatDateToAPI = (date: Date | null): string | null => {
-    if (!date) return null;
-    
+    if (!date) return null
+
     // Format: YYYY-MM-DD pour l'API
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');  // Les mois commencent à 0
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0") // Les mois commencent à 0
+    const day = String(date.getDate()).padStart(2, "0")
+
+    return `${year}-${month}-${day}`
+  }
+
+  // Fonction pour formater l'URL de la photo de l'utilisateur
+  const formatPhotoUrl = (photoPath?: string): string => {
+    if (!photoPath) return ""
     
-    return `${year}-${month}-${day}`;
-  };
+    // Si le chemin commence par '/', c'est un chemin relatif du serveur, on ajoute l'URL de base
+    if (photoPath.startsWith('/')) {
+      return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${photoPath}`
+    }
+    
+    return photoPath
+  }
 
   useEffect(() => {
     fetchHistory()
@@ -113,7 +128,7 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
     setSelectedDate(date)
     // Format de date pour l'API: YYYY-MM-DD
     const formattedDate = formatDateToAPI(date)
-    
+
     if (onDateChange) {
       onDateChange(formattedDate)
     } else {
@@ -166,9 +181,9 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
 
   // Nouvelle fonction pour basculer l'état d'expansion d'un utilisateur
   const toggleUserExpansion = (userId: string) => {
-    setExpandedUsers(prev => ({
+    setExpandedUsers((prev) => ({
       ...prev,
-      [userId]: !prev[userId]
+      [userId]: !prev[userId],
     }))
   }
 
@@ -188,32 +203,34 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
   // Fonction pour récupérer le nom du lieu à partir des données d'attendance
   const getLocationName = (attendance: Attendance) => {
     // Vérifier d'abord si l'objet location est une chaîne de caractères (format backend)
-    if (typeof attendance.location === 'string') {
-      return attendance.location; // C'est déjà le nom (ex: "Hors zone")
+    if (typeof attendance.location === "string") {
+      return attendance.location // C'est déjà le nom (ex: "Hors zone")
     }
-    
+
     // Vérifier si l'objet location existe et contient un nom (ancien format)
-    if (attendance.location && typeof attendance.location === 'object' && attendance.location.name) {
-      return attendance.location.name;
+    if (attendance.location && typeof attendance.location === "object" && attendance.location.name) {
+      return attendance.location.name
     }
-    
+
     // Vérifier si locationId existe (ancien format)
     if (attendance.locationId) {
-      return `Lieu ID: ${attendance.locationId}`;
+      return `Lieu ID: ${attendance.locationId}`
     }
-    
+
     // Retourner une valeur par défaut si aucune information de lieu n'est disponible
-    return "Lieu non spécifié";
+    return "Lieu non spécifié"
   }
 
   // Fonction pour formater et afficher les coordonnées GPS si disponibles
   const formatCoordinates = (attendance: Attendance) => {
-    if (attendance.coordinates && 
-        typeof attendance.coordinates.latitude === 'number' && 
-        typeof attendance.coordinates.longitude === 'number') {
-      return `${attendance.coordinates.latitude.toFixed(6)}, ${attendance.coordinates.longitude.toFixed(6)}`;
+    if (
+      attendance.coordinates &&
+      typeof attendance.coordinates.latitude === "number" &&
+      typeof attendance.coordinates.longitude === "number"
+    ) {
+      return `${attendance.coordinates.latitude.toFixed(6)}, ${attendance.coordinates.longitude.toFixed(6)}`
     }
-    return null;
+    return null
   }
 
   return (
@@ -221,12 +238,7 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Historique de pointage</h2>
         <div className="flex items-center gap-2">
-          <DatePicker 
-            date={selectedDate} 
-            onSelect={handleDateChange} 
-            placeholder="Filtrer par date"
-            className="w-40"
-          />
+          <DatePicker date={selectedDate} onSelect={handleDateChange} placeholder="Filtrer par date" className="w-40" />
           {!userId && (
             <AlertDialog open={deleteAllConfirmOpen} onOpenChange={setDeleteAllConfirmOpen}>
               <AlertDialogTrigger asChild>
@@ -239,7 +251,8 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
                 <AlertDialogHeader>
                   <AlertDialogTitle>Supprimer tous les pointages</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer tous les pointages de tous les utilisateurs ? Cette action est irréversible.
+                    Êtes-vous sûr de vouloir supprimer tous les pointages de tous les utilisateurs ? Cette action est
+                    irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -258,19 +271,31 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
         <div className="text-center py-8 text-gray-500">Aucun pointage trouvé</div>
       ) : (
         <div className="space-y-8">
-          {users.map(user => (
-            <div key={user.id} className="border rounded-lg p-4">
+          {users.map((user) => (
+            <div
+              key={user.id}
+              className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 dark:bg-gray-800/60"
+            >
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium">{user.name}</h3>
-                  <span className="text-sm text-gray-500">{user.email}</span>
+                  <Avatar className="h-8 w-8 border-2 border-primary/10">
+                    <AvatarImage src={formatPhotoUrl(user.photo)} alt={user.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-medium">{user.name}</h3>
+                    <span className="text-sm text-muted-foreground">{user.email}</span>
+                  </div>
                 </div>
                 {!userId && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
+                        className="hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                         onClick={() => setUserToDelete(user.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -281,65 +306,78 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
                       <AlertDialogHeader>
                         <AlertDialogTitle>Supprimer l'historique de pointage</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir supprimer tout l'historique de pointage de {user.name} ? Cette action est irréversible.
+                          Êtes-vous sûr de vouloir supprimer tout l'historique de pointage de {user.name} ? Cette action
+                          est irréversible.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteUserHistory(user.id)}>Confirmer</AlertDialogAction>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteUserHistory(user.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Supprimer
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              
+
               {user.attendances.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">Aucun pointage pour cet utilisateur</div>
+                <div className="text-center py-4 text-muted-foreground">Aucun pointage pour cet utilisateur</div>
               ) : (
                 <>
                   <div className="space-y-4">
                     {getAttendancesToShow(user).map((attendance, index) => (
-                      // Utiliser une combinaison de l'ID et de l'index pour garantir l'unicité des clés
-                      <div key={`${attendance.id || 'attendance'}-${index}`} className="border-b pb-3">
+                      <div
+                        key={`${attendance.id || "attendance"}-${index}`}
+                        className="border-b pb-3 hover:bg-muted/20 p-2 rounded-md transition-colors"
+                      >
                         <div className="flex justify-between">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="font-normal">
+                              <Badge
+                                variant="outline"
+                                className="font-normal bg-primary/5 hover:bg-primary/10 transition-colors"
+                              >
                                 {attendance.clockInDate}
                               </Badge>
                             </div>
-                            
+
                             <div className="flex items-center gap-4 mt-2">
-                              <div className="bg-green-100 text-green-500 h-8 w-8 rounded-full flex items-center justify-center">
+                              <div className="bg-green-100 dark:bg-green-900/30 text-green-500 h-8 w-8 rounded-full flex items-center justify-center">
                                 <ArrowUp className="h-4 w-4" />
                               </div>
-                              <div>
-                                <p className="font-medium">Entrée</p>
-                                <p className="text-sm text-gray-500">{attendance.clockInTime}</p>
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <p className="font-medium">Entrée</p>
+                                  <p className="text-sm text-muted-foreground">{attendance.clockInTime}</p>
+                                </div>
                               </div>
                             </div>
-                            
+
                             {attendance.clockOutDate && attendance.clockOutTime && (
                               <div className="flex items-center gap-4 mt-2">
-                                <div className="bg-red-100 text-red-500 h-8 w-8 rounded-full flex items-center justify-center">
+                                <div className="bg-red-100 dark:bg-red-900/30 text-red-500 h-8 w-8 rounded-full flex items-center justify-center">
                                   <ArrowDown className="h-4 w-4" />
                                 </div>
-                                <div>
-                                  <p className="font-medium">Sortie</p>
-                                  <p className="text-sm text-gray-500">{attendance.clockOutTime}</p>
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <p className="font-medium">Sortie</p>
+                                    <p className="text-sm text-muted-foreground">{attendance.clockOutTime}</p>
+                                  </div>
                                 </div>
                               </div>
                             )}
                           </div>
-                          
+
                           <div>
-                            <Badge>
-                              {/* Utiliser la nouvelle fonction pour récupérer le nom du lieu */}
+                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300">
                               {getLocationName(attendance)}
                             </Badge>
-                            {/* Afficher les coordonnées si disponibles */}
                             {formatCoordinates(attendance) && (
-                              <div className="text-xs text-gray-500 mt-1">
+                              <div className="text-xs text-muted-foreground mt-1 pl-[78px]">
                                 GPS: {formatCoordinates(attendance)}
                               </div>
                             )}
@@ -348,14 +386,13 @@ export function CheckInHistory({ userId, date, onDateChange }: CheckInHistoryPro
                       </div>
                     ))}
                   </div>
-                  
-                  {/* Bouton "Voir plus/Voir moins" si nécessaire */}
+
                   {hasMoreAttendances(user) && (
                     <div className="flex justify-center mt-4">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         onClick={() => toggleUserExpansion(user.id)}
-                        className="flex items-center gap-1 text-sm"
+                        className="flex items-center gap-1 text-sm hover:bg-primary/10"
                       >
                         {expandedUsers[user.id] ? (
                           <>

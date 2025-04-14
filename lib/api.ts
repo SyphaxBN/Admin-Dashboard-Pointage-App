@@ -255,8 +255,12 @@ export const api = {
         })
         console.log("Réponse de création de lieu:", response)
         return response
-      } catch (error) {
+      } catch (error: any) {
         console.error("Erreur lors de la création d'un lieu:", error)
+        // S'assurer que l'erreur est propagée avec le message du backend
+        if (error && error.response && error.response.message) {
+          throw new Error(error.response.message);
+        }
         throw error
       }
     },

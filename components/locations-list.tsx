@@ -134,13 +134,26 @@ export function LocationsList({ locations: preloadedLocations, isPreloaded = fal
         title: "Succès",
         description: "Le lieu de pointage a été ajouté avec succès",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de l'ajout du lieu:", error)
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter le lieu de pointage",
-        variant: "destructive",
-      })
+      
+      // Approche beaucoup plus simple et directe
+      // Afficher un message d'erreur spécifique si le nom existe déjà
+      const errorStr = String(error);
+      if (errorStr.toLowerCase().includes("existe déjà") || errorStr.toLowerCase().includes("already exists")) {
+        toast({
+          title: "Nom déjà utilisé",
+          description: `Un lieu avec le nom "${newLocation.name}" existe déjà.`,
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter le lieu de pointage",
+          variant: "destructive",
+        })
+      }
+      // On garde la boîte de dialogue ouverte pour que l'utilisateur puisse corriger
     }
   }
 

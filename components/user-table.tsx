@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { api } from "@/lib/api"
 
 // Interface mise à jour pour inclure les champs du backend
@@ -52,8 +53,20 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [todayCheckIns, setTodayCheckIns] = useState<Record<string, boolean>>({})
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
+    // Récupérer l'ID de l'utilisateur connecté
+    try {
+      const storedUser = localStorage.getItem("auth_user")
+      if (storedUser) {
+        const user = JSON.parse(storedUser)
+        setCurrentUserId(user.id)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur connecté:", error)
+    }
+
     if (!isPreloaded) {
       fetchUsers()
       fetchTodayCheckIns()
@@ -225,6 +238,11 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
+  // Vérifier si l'utilisateur est celui actuellement connecté
+  const isCurrentUser = (userId: string) => {
+    return userId === currentUserId
+  }
+
   return (
     <>
       <div className="mb-4 relative">
@@ -320,7 +338,7 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
                             Promouvoir Admin
                           </Button>
                         )}
-                        {user.role === "ADMIN" && (
+                        {user.role === "ADMIN" && !isCurrentUser(user.id) && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -330,17 +348,57 @@ export function UserTable({ users: preloadedUsers, isPreloaded = false }: UserTa
                             Rétrograder
                           </Button>
                         )}
+                        {user.role === "ADMIN" && isCurrentUser(user.id) && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-slate-400 border-slate-200 cursor-not-allowed opacity-70"
+                                  disabled
+                                >
+                                  Rétrograder
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>Vous ne pouvez pas rétrograder votre propre compte.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       <div className="ml-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 w-[110px]"
-                          onClick={() => setUserToDelete(user.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Supprimer
-                        </Button>
+                        {!isCurrentUser(user.id) ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 w-[110px]"
+                            onClick={() => setUserToDelete(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Supprimer
+                          </Button>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-slate-400 hover:bg-transparent cursor-not-allowed opacity-70 w-[110px]"
+                                  disabled
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Supprimer
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>Vous ne pouvez pas supprimer votre propre compte. Connectez-vous avec un autre compte administrateur pour effectuer cette action.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                     </div>
                   </TableCell>
